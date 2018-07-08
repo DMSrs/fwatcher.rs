@@ -206,24 +206,24 @@ impl<T: WatchingMode> Fwatcher<T> {
     }
 }*/
 
-impl WatchingMode for Vec<String> {
+impl<'a> WatchingMode for &'a mut Vec<String> {
     fn run() {
 
     }
 }
 
-impl WatchingMode for Box<Fn(usize)> {
+impl<'a> WatchingMode for &'a mut Box<Fn(usize)> {
     fn run() {
     }
 }
 
-impl Fwatcher<Box<Fn(usize)>> {
+impl<'a> Fwatcher<&'a mut Box<Fn(usize)>> {
     fn restart_child(&mut self) {
 
     }
 }
 
-impl Fwatcher<Vec<String>> {
+impl<'a> Fwatcher<&'a mut Vec<String>> {
     fn restart_child(&mut self) {
 
     }
