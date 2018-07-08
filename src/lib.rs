@@ -54,30 +54,34 @@ use std::time::{Duration, Instant};
 
 pub mod cli;
 
+pub trait WatchingMode {
+    fn run();
+}
+
 /// a struct save `Fwatcher` state
-pub struct Fwatcher {
+pub struct Fwatcher<T: WatchingMode> {
     dirs: Vec<PathBuf>,
     patterns: Vec<Pattern>,
     exclude_patterns: Vec<Pattern>,
     delay: Duration,
     interval: Duration,
     restart: bool,
-    cmd: Vec<String>,
+    cmd: T,
     last_run: Option<Instant>,
     child: Option<Child>,
 }
 
-impl Fwatcher {
+impl<T: WatchingMode> Fwatcher<T> {
     /// Constructs a new `Fwatcher`
-    pub fn new(dirs: Vec<PathBuf>, cmd: Vec<String>) -> Self {
+    pub fn new(dirs: Vec<PathBuf>, cmd: T) -> Self {
         Fwatcher {
-            dirs: dirs,
+            dirs,
             patterns: Vec::new(),
             exclude_patterns: Vec::new(),
             delay: Duration::new(2, 0),
             interval: Duration::new(1, 0),
             restart: false,
-            cmd: cmd,
+            cmd,
             last_run: None,
             child: None,
         }
@@ -185,7 +189,9 @@ impl Fwatcher {
             _ => {},
         }
     }
+}
 
+/*impl Fwatcher<Vec<String>> {
     fn restart_child(&mut self) {
         if let Some(ref mut child) = self.child {
             if self.restart {
@@ -197,5 +203,28 @@ impl Fwatcher {
             .spawn()
             .ok();
         self.last_run = Some(Instant::now());
+    }
+}*/
+
+impl WatchingMode for Vec<String> {
+    fn run() {
+
+    }
+}
+
+impl WatchingMode for Box<Fn(usize)> {
+    fn run() {
+    }
+}
+
+impl Fwatcher<Box<Fn(usize)>> {
+    fn restart_child(&mut self) {
+
+    }
+}
+
+impl Fwatcher<Vec<String>> {
+    fn restart_child(&mut self) {
+
     }
 }
