@@ -182,7 +182,6 @@ impl<T: WatchingMode> Fwatcher<T> {
                     self.exclude_patterns
                        .iter()
                        .all(|ref pat| !pat.matches_path(fpath)) {
-                    println!("Modified: {:?}", fpath);
                     self.cmd.restart_child(Some(&event), &mut self.child, &mut self.restart, &mut self.last_run);
                 }
             },
