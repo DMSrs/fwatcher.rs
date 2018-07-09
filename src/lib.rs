@@ -55,7 +55,7 @@ use std::time::{Duration, Instant};
 pub mod cli;
 
 pub trait WatchingMode {
-    fn restart_child(&mut self);
+    fn restart_child(&mut self, watcher: &mut Fwatcher<Self>) where Self: std::marker::Sized;
 }
 
 /// a struct save `Fwatcher` state
@@ -144,7 +144,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .expect("can not watch dir");
             }
         }
-        self.cmd.restart_child();
+        self.cmd.restart_child(&mut self);
 
         loop {
             match rx.recv() {
@@ -179,11 +179,11 @@ impl<T: WatchingMode> Fwatcher<T> {
                 if self.patterns
                        .iter()
                        .any(|ref pat| pat.matches_path(fpath)) &&
-                   self.exclude_patterns
+                    self.exclude_patterns
                        .iter()
                        .all(|ref pat| !pat.matches_path(fpath)) {
                     println!("Modified: {:?}", fpath);
-                    self.cmd.restart_child();
+                    self.cmd.restart_child(&mut self);
                 }
             },
             _ => {},
@@ -192,35 +192,23 @@ impl<T: WatchingMode> Fwatcher<T> {
 }
 
 impl WatchingMode for Vec<String> {
-    fn restart_child(&mut self) {
-        if let Some(ref mut child) = self.child {
-            if self.restart {
+    fn restart_child(&mut self, watcher: &mut Fwatcher<Self>) {
+        if let Some(ref mut child) = watcher.child {
+            if watcher.restart {
                 let _ = child.kill();
             }
         }
-        self.child = Command::new(&self.cmd[0])
-            .args(&self.cmd[1..])
+        watcher.child = Command::new(&watcher.cmd[0])
+            .args(&watcher.cmd[1..])
             .spawn()
             .ok();
-        self.last_run = Some(Instant::now());
+        watcher.last_run = Some(Instant::now());
     }
 }
 
 
 impl WatchingMode for Box<Fn(usize)> {
-    fn restart_child(&mut self) {
-
-    }
-}
-
-impl Fwatcher<Box<Fn(usize)>> {
-    fn restart_child(&mut self) {
-
-    }
-}
-
-impl Fwatcher<Vec<String>> {
-    fn restart_child(&mut self) {
+    fn restart_child(&mut self, watcher: &mut Fwatcher<Self>) {
 
     }
 }
