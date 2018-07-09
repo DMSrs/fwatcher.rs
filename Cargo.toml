@@ -1,6 +1,6 @@
 [package]
 name = "fwatcher"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["FuGangqiang <fu_gangqiang@qq.com>", "Denys Vitali <denys@denv.it>"]
 description = "Auto run command when some files changed."
 repository = "https://github.com/DMSrs/fwatcher.rs"

@@ -42,8 +42,8 @@
        html_root_url = "https://docs.rs/fwatcher")]
 
 extern crate getopts;
-extern crate glob;
-extern crate notify;
+pub extern crate glob;
+pub extern crate notify;
 
 use glob::Pattern;
 use notify::{DebouncedEvent, RecursiveMode, Watcher, watcher};
