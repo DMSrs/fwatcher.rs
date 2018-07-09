@@ -55,7 +55,7 @@ use std::time::{Duration, Instant};
 pub mod cli;
 
 pub trait WatchingMode {
-    fn restart_child(&mut self, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>);
+    fn restart_child(&mut self, event: Option<&DebouncedEvent>, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>);
 }
 
 /// a struct save `Fwatcher` state
@@ -144,7 +144,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .expect("can not watch dir");
             }
         }
-        self.cmd.restart_child(&mut self.child, &mut self.restart, &mut self.last_run);
+        self.cmd.restart_child(None, &mut self.child, &mut self.restart, &mut self.last_run);
 
         loop {
             match rx.recv() {
@@ -183,7 +183,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .iter()
                        .all(|ref pat| !pat.matches_path(fpath)) {
                     println!("Modified: {:?}", fpath);
-                    self.cmd.restart_child(&mut self.child, &mut self.restart, &mut self.last_run);
+                    self.cmd.restart_child(Some(&event), &mut self.child, &mut self.restart, &mut self.last_run);
                 }
             },
             _ => {},
@@ -192,7 +192,7 @@ impl<T: WatchingMode> Fwatcher<T> {
 }
 
 impl WatchingMode for Vec<String> {
-    fn restart_child<'a>(&'a mut self, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>) {
+    fn restart_child<'a>(&'a mut self, event: Option<&DebouncedEvent>, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>) {
         if let Some(ref mut child) = child {
             if *restart {
                 let _ = child.kill();
@@ -208,8 +208,11 @@ impl WatchingMode for Vec<String> {
 }
 
 
-impl WatchingMode for Box<Fn(usize)> {
-    fn restart_child(&mut self, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>) {
-
+impl WatchingMode for Box<Fn(&DebouncedEvent)> {
+    fn restart_child(&mut self, event: Option<&DebouncedEvent>, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>) {
+        if let Some(e) = event {
+            self(e);
+        }
+        *last_run = Some(Instant::now());
     }
 }
