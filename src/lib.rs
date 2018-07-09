@@ -55,7 +55,6 @@ use std::time::{Duration, Instant};
 pub mod cli;
 
 pub trait WatchingMode {
-    fn run();
     fn restart_child(&mut self);
 }
 
@@ -145,7 +144,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .expect("can not watch dir");
             }
         }
-        WatchingMode::restart_child(self);
+        self.cmd.restart_child();
 
         loop {
             match rx.recv() {
@@ -184,7 +183,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .iter()
                        .all(|ref pat| !pat.matches_path(fpath)) {
                     println!("Modified: {:?}", fpath);
-                    WatchingMode::restart_child(self);
+                    self.cmd.restart_child();
                 }
             },
             _ => {},
@@ -192,7 +191,7 @@ impl<T: WatchingMode> Fwatcher<T> {
     }
 }
 
-/*impl Fwatcher<Vec<String>> {
+impl WatchingMode for Vec<String> {
     fn restart_child(&mut self) {
         if let Some(ref mut child) = self.child {
             if self.restart {
@@ -205,22 +204,12 @@ impl<T: WatchingMode> Fwatcher<T> {
             .ok();
         self.last_run = Some(Instant::now());
     }
-}*/
-
-impl WatchingMode for Vec<String> {
-    fn run() {
-
-    }
-
-    fn restart_child(&mut self) {
-    }
 }
 
-impl WatchingMode for Box<Fn(usize)> {
-    fn run() {
-    }
 
+impl WatchingMode for Box<Fn(usize)> {
     fn restart_child(&mut self) {
+
     }
 }
 
