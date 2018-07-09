@@ -56,6 +56,7 @@ pub mod cli;
 
 pub trait WatchingMode {
     fn run();
+    fn restart_child(&mut self);
 }
 
 /// a struct save `Fwatcher` state
@@ -144,7 +145,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .expect("can not watch dir");
             }
         }
-        self.restart_child();
+        WatchingMode::restart_child(self);
 
         loop {
             match rx.recv() {
@@ -183,7 +184,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .iter()
                        .all(|ref pat| !pat.matches_path(fpath)) {
                     println!("Modified: {:?}", fpath);
-                    self.restart_child();
+                    WatchingMode::restart_child(self);
                 }
             },
             _ => {},
@@ -206,24 +207,30 @@ impl<T: WatchingMode> Fwatcher<T> {
     }
 }*/
 
-impl<'a> WatchingMode for &'a mut Vec<String> {
+impl WatchingMode for Vec<String> {
     fn run() {
 
     }
-}
 
-impl<'a> WatchingMode for &'a mut Box<Fn(usize)> {
-    fn run() {
+    fn restart_child(&mut self) {
     }
 }
 
-impl<'a> Fwatcher<&'a mut Box<Fn(usize)>> {
+impl WatchingMode for Box<Fn(usize)> {
+    fn run() {
+    }
+
+    fn restart_child(&mut self) {
+    }
+}
+
+impl Fwatcher<Box<Fn(usize)>> {
     fn restart_child(&mut self) {
 
     }
 }
 
-impl<'a> Fwatcher<&'a mut Vec<String>> {
+impl Fwatcher<Vec<String>> {
     fn restart_child(&mut self) {
 
     }
