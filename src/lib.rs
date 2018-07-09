@@ -55,7 +55,7 @@ use std::time::{Duration, Instant};
 pub mod cli;
 
 pub trait WatchingMode {
-    fn restart_child(&mut self, watcher: &mut Fwatcher<Self>) where Self: std::marker::Sized;
+    fn restart_child(&mut self, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>);
 }
 
 /// a struct save `Fwatcher` state
@@ -144,7 +144,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .expect("can not watch dir");
             }
         }
-        self.cmd.restart_child(&mut self);
+        self.cmd.restart_child(&mut self.child, &mut self.restart, &mut self.last_run);
 
         loop {
             match rx.recv() {
@@ -183,7 +183,7 @@ impl<T: WatchingMode> Fwatcher<T> {
                        .iter()
                        .all(|ref pat| !pat.matches_path(fpath)) {
                     println!("Modified: {:?}", fpath);
-                    self.cmd.restart_child(&mut self);
+                    self.cmd.restart_child(&mut self.child, &mut self.restart, &mut self.last_run);
                 }
             },
             _ => {},
@@ -192,23 +192,24 @@ impl<T: WatchingMode> Fwatcher<T> {
 }
 
 impl WatchingMode for Vec<String> {
-    fn restart_child(&mut self, watcher: &mut Fwatcher<Self>) {
-        if let Some(ref mut child) = watcher.child {
-            if watcher.restart {
+    fn restart_child<'a>(&'a mut self, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>) {
+        if let Some(ref mut child) = child {
+            if *restart {
                 let _ = child.kill();
             }
         }
-        watcher.child = Command::new(&watcher.cmd[0])
-            .args(&watcher.cmd[1..])
+
+        *child = Command::new(&self[0])
+            .args(&self[1..])
             .spawn()
             .ok();
-        watcher.last_run = Some(Instant::now());
+        *last_run = Some(Instant::now());
     }
 }
 
 
 impl WatchingMode for Box<Fn(usize)> {
-    fn restart_child(&mut self, watcher: &mut Fwatcher<Self>) {
+    fn restart_child(&mut self, child: &mut Option<Child>, restart: &mut bool, last_run: &mut Option<Instant>) {
 
     }
 }
